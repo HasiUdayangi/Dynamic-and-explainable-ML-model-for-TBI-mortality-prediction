@@ -1,21 +1,4 @@
-#!/usr/bin/env python3
-"""
-Tokenize, Embed, and Apply SMOTE on Patient Vital Data
 
-This script performs the following steps:
-1. Reads a combined CSV file (containing patient vital data) with columns including:
-   - 'patientid'
-   - 'hour'
-   - 'Outcome'
-   - Other vital sign feature columns
-2. For each patient, tokenizes and embeds each time window by averaging the features.
-3. Creates sequences and labels for each patient.
-4. Pads the sequences to a uniform length.
-5. Splits the dataset into training (80%) and testing (20%) sets.
-6. Flattens the training sequences, applies SMOTE for class balancing,
-   and reshapes the result back to 3D for LSTM input.
-7. Saves the resulting datasets as .npy files.
-"""
 
 import os
 import numpy as np
@@ -48,7 +31,7 @@ def tokenize_and_embed(group, embedding_dim=16):
 
 def main():
     # File containing the combined vital data (update with your actual file path)
-    combined_data_file = "combined_data.csv"
+    combined_data_file = ""
     combined_data = pd.read_csv(combined_data_file)
     
     # Create sequences and labels for each patient
