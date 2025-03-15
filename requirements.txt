@@ -1,0 +1,9 @@
+boto3
+pandas
+numpy
+matplotlib
+tensorflow>=2.0
+shap
+scikit-learn
+imbalanced-learn
+ipython
