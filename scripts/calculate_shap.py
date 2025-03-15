@@ -2,17 +2,6 @@
 """
 Calculate SHAP Values and Generate Summary Plots for TBI HRV Prediction Model
 
-This script:
-  - Loads training data (X_train_resampled) and test data (X_test) from .npy files.
-  - Loads the best trained model.
-  - Constructs a fixed-input model by applying a Lambda layer to squeeze the output dimension.
-  - Uses SHAP GradientExplainer to compute SHAP values for the test data.
-  - Saves the computed SHAP values as both .npy and .pkl files.
-  - Generates summary plots for selected time steps (24, 48, and 120) and for the time-averaged values.
-  - Saves all plots to an output folder.
-  
-Usage:
-    python calculate_shap.py
 """
 
 import os
@@ -29,15 +18,15 @@ import shap
 # Configuration – Update paths as needed!
 # ------------------------------
 # Path to saved training and test data
-X_train_path = 'data/token/X_train_resampled.npy'
-y_train_path = 'data/token/y_train_resampled.npy'
-X_test_path = 'data/token/X_test.npy'
+X_train_path = '/X_train_resampled.npy'
+y_train_path = '/y_train_resampled.npy'
+X_test_path = '/X_test.npy'
 
 # Path to best model file (ensure the file path is correct)
-best_model_path = "real time output hourly token_final_moreSHAP/best_model_BiLSTM_cumulative_2.keras"
+best_model_path = ""
 
 # Output folder for SHAP analysis results
-output_folder = "SHAP final analysis"
+output_folder = "s"
 os.makedirs(output_folder, exist_ok=True)
 
 # ------------------------------
@@ -120,7 +109,7 @@ shap_values_avg = np.mean(shap_values, axis=1) # Shape: (num_samples, 16)
 # Generate beeswarm summary plot for averaged values
 plt.figure()
 shap.summary_plot(shap_values_avg, X_test_avg, feature_names=features, show=False)
-plot_filename = os.path.join(output_folder, f"shap_summary_time_overtime.png")
+plot_filename = os.path.join(output_folder, f"")
 plt.savefig(plot_filename, bbox_inches='tight')
 plt.close()
 print("Summary plot (beeswarm, averaged) saved to:", plot_filename)
@@ -128,7 +117,7 @@ print("Summary plot (beeswarm, averaged) saved to:", plot_filename)
 # Generate bar plot summary for averaged values
 plt.figure()
 shap.summary_plot(shap_values_avg, X_test_avg, feature_names=features, plot_type="bar", show=False)
-plot_filename = os.path.join(output_folder, f"summary_plot_time_overtime.png")
+plot_filename = os.path.join(output_folder, f"")
 plt.savefig(plot_filename, bbox_inches='tight')
 plt.close()
 print("Bar summary plot (averaged) saved to:", plot_filename)
