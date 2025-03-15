@@ -1,22 +1,6 @@
-#!/usr/bin/env python3
+
 """
 Explainable Performance Evaluation for TBI Mortality Prediction
-
-This script performs the following steps:
-1. Loads data from CSV files:
-   - df_features.csv: Contains raw feature values with a "Time_Step" column.
-   - df_importance.csv: Contains feature importance values (e.g., "HR_min_FI").
-   - df_preds.csv: Contains model predictions (e.g., "Non-Survival Probability") with "Time_Step".
-2. Merges df_features and df_preds, then computes effect columns as the product of the raw feature and its corresponding FI.
-3. Defines summary dictionary functions to extract top positive and negative feature effects at time points (multiples of 12 hours).
-4. Defines color mapping and a plotting function to create grid charts of feature effects.
-5. Loads APACHE data for a given patient.
-6. Filters merged data for the desired time range (2–72 hours), computes sum of positive/negative effects, and plots a fill‐between chart with annotations.
-7. Merges df_features and df_importance on "Time" for additional analysis, computes effect columns, and then plots grid charts for top effects.
-8. Saves generated plots and the merged dataframe for further analysis.
-
-Usage:
-    python explainable_performance.py
 """
 
 import os
@@ -45,6 +29,7 @@ def load_data():
     df_merged = pd.merge(df_features, df_preds, on="Time_Step", how="inner")
     print("Merged DataFrame columns:", df_merged.columns.tolist())
     return df_features, df_importance, df_preds, df_merged
+   
 
 # ==========================
 # Part 2: Compute Effect Columns
@@ -354,11 +339,11 @@ def main():
     df_plot["sum_pos_effect"] = df_plot[all_effect_cols].apply(lambda row: sum(val for val in row if val > 0), axis=1)
     df_plot["sum_neg_effect"] = df_plot[all_effect_cols].apply(lambda row: sum(val for val in row if val < 0), axis=1)
     
-    patient_id = "0272B4F0394AE7EF8C053BB17B4B74B6"
-    output_folder = "SHAP final analysis/feature effects/2"
+    patient_id = ""
+    output_folder = ""
     os.makedirs(output_folder, exist_ok=True)
     # Load APACHE data for the patient
-    apache_file = "SHAP final analysis/selected patients/normalize_all_patient_data_corrected_APACHE.csv"
+    apache_file = ""
     df_apache_patient = pd.read_csv(apache_file)
     df_apache_patient = df_apache_patient[df_apache_patient["patientid"] == patient_id].copy()
     if "Time_Step" not in df_apache_patient.columns and "hour" in df_apache_patient.columns:
@@ -373,11 +358,11 @@ def main():
     summary_dict_pos = top_positive_features_each_time_merged(df_merged2, features, n=5)
     summary_dict_neg = top_negative_features_each_time_merged(df_merged2, features, n=5)
     
-    output_folder_effects = "SHAP final analysis/feature effects/2"
+    output_folder_effects = ""
     os.makedirs(output_folder_effects, exist_ok=True)
     
-    save_path_pos = os.path.join(output_folder_effects, "non_survival_effects_red.png")
-    save_path_neg = os.path.join(output_folder_effects, "survival_effects_blue.png")
+    save_path_pos = os.path.join(output_folder_effects, "")
+    save_path_neg = os.path.join(output_folder_effects, "")
     
     fig_pos = plot_script_chart(summary_dict_pos, n=5, 
                                 title="Top Non-Survival Feature Effects",
@@ -391,7 +376,7 @@ def main():
     
     # ---------------------------
     # Step 4: Save the Merged DataFrame for Further Analysis
-    df_merged2.to_csv("SHAP_final_analysis_merged.csv", index=False)
+    df_merged2.to_csv("", index=False)
     print("Merged dataframe saved as SHAP_final_analysis_merged.csv")
     
 if __name__ == "__main__":
