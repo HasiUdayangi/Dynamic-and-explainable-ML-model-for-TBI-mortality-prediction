@@ -1,18 +1,6 @@
-#!/usr/bin/env python3
+
 """
 Test Performance Evaluation for Model vs. APACHE Comparison
-
-This script:
-  1. Loads APACHE and prediction CSV files.
-  2. Merges them on ["patientid", "Time (Hours)"].
-  3. Drops rows missing critical values ("APACHE", "Non-Survival Probability", "Outcome").
-  4. Computes overall AUROC for the model and APACHE; inverts APACHE predictions if AUROC < 0.5.
-  5. Plots the overall ROC curves.
-  6. For each time point (e.g., 24, 72, 96, 120), selects for each patient the row closest to that time, computes bootstrap AUROC with CIs for both model and APACHE, and stores the results.
-  7. Plots AUROC over time with error bars and annotations.
-  
-Usage:
-    python test_performance_evaluation.py
 """
 
 import os
@@ -21,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score, roc_curve, accuracy_score, precision_score, recall_score, matthews_corrcoef
 from sklearn.utils import resample
+from tensorflow.keras.models import load_model
 
 # -----------------------------
 # Global Time Points of Interest
@@ -70,17 +59,73 @@ def fix_apache_if_needed(y_true, y_pred_apache):
 # Function: Load and Merge Data
 # -----------------------------
 def load_and_merge_data(apache_file, preds_file):
-    """
-    Loads APACHE data and model predictions, then merges them on ["patientid", "Time (Hours)"].
-    """
+
     df_apache = pd.read_csv(apache_file)
     df_preds = pd.read_csv(preds_file)
     df_merged = pd.merge(df_apache, df_preds, how="inner", on=["patientid", "Time (Hours)"])
     print("Merged shape:", df_merged.shape)
-    # Drop rows missing critical values
     required_cols = ["APACHE", "Non-Survival Probability", "Outcome"]
     df_merged.dropna(subset=required_cols, inplace=True)
     print("After dropping rows missing APACHE/model/outcome:", df_merged.shape)
+    return df_merged
+
+# -----------------------------
+# Function: Preprocess Patient Data Hourly
+# -----------------------------
+def preprocess_patient_data_hourly(patient_data, embedding_dim=16, max_seq_len=72):
+
+    feature_cols = [col for col in patient_data.columns if col not in ["patientid", "Time (Hours)"]]
+    grouped = patient_data.groupby("Time (Hours)")[feature_cols].mean().reset_index()
+    grouped = grouped.sort_values("Time (Hours)")
+    hourly_vectors = []
+    for _, row in grouped.iterrows():
+        vec = row[feature_cols].values.astype(float)
+        if len(vec) < embedding_dim:
+            pad = np.zeros(embedding_dim - len(vec))
+            vec = np.concatenate([vec, pad])
+        else:
+            vec = vec[:embedding_dim]
+        hourly_vectors.append(vec)
+    num_hours = len(hourly_vectors)
+    if num_hours < max_seq_len:
+        for _ in range(max_seq_len - num_hours):
+            hourly_vectors.append(np.zeros(embedding_dim))
+    else:
+        hourly_vectors = hourly_vectors[:max_seq_len]
+    return np.array(hourly_vectors)
+
+# -----------------------------
+# Function: Process a Single Patient's Data
+# -----------------------------
+def process_patient(pid, test_data_df, apache_df, best_model, embedding_dim=16, max_seq_len=72):
+
+    patient_data = test_data_df[test_data_df["patientid"] == pid].copy()
+    if patient_data.empty:
+        print(f"No test data found for patient {pid}.")
+        return None
+    hourly_sequences = preprocess_patient_data_hourly(patient_data, embedding_dim, max_seq_len)
+    print(f"Patient {pid}: Hourly sequence shape: {hourly_sequences.shape}")
+    
+    hourly_probs = []
+    for seq in hourly_sequences:
+        prob = best_model.predict(np.expand_dims(seq, axis=0)).flatten()[0]
+        hourly_probs.append(prob)
+    
+    df_preds = pd.DataFrame({
+        "Time (Hours)": np.arange(max_seq_len),
+        "Non-Survival Probability": hourly_probs,
+        "patientid": pid
+    })
+    
+    df_apache_patient = apache_df[apache_df["patientid"] == pid].copy()
+    if "Time (Hours)" not in df_apache_patient.columns and "hour" in df_apache_patient.columns:
+        df_apache_patient.rename(columns={"hour": "Time (Hours)"}, inplace=True)
+    
+    if df_apache_patient.empty:
+        print(f"No APACHE data found for patient {pid}. Returning model predictions only.")
+        return df_preds
+    
+    df_merged = pd.merge(df_preds, df_apache_patient, on=["patientid", "Time (Hours)"], how="inner")
     return df_merged
 
 # -----------------------------
@@ -102,7 +147,6 @@ def evaluate_overall_roc(df_merged, output_folder):
         apache_auc = roc_auc_score(y_true, y_pred_apache)
         print(f"Inverted APACHE AUROC: {apache_auc:.4f}")
     
-    # Compute ROC curves
     fpr_model, tpr_model, _ = roc_curve(y_true, y_pred_model)
     fpr_apache, tpr_apache, _ = roc_curve(y_true, y_pred_apache)
     
@@ -133,7 +177,6 @@ def evaluate_time_points(df_merged, time_points):
     apache_errors = []  # (mean - lower, upper - mean)
     
     for t in time_points:
-        # For each patient, pick the row closest to time t
         df_t = df_merged.groupby("patientid", group_keys=False).apply(lambda group: pick_closest_time(group, t)).reset_index(drop=True)
         df_t.dropna(subset=["Outcome", "Non-Survival Probability", "APACHE"], inplace=True)
         
@@ -196,23 +239,53 @@ def plot_timepoint_auc(time_points, model_auc_means, model_errors, apache_auc_me
     print(f"Timepoint AUROC plot saved to: {roc_plot_file}")
 
 # -----------------------------
-# Main Function
+# Main Function: Process All Patients and Evaluate
 # -----------------------------
 def main():
-    # Define file paths for APACHE and predictions CSV files (update as needed)
-    apache_file = "df_apache.csv"
-    preds_file = "df_preds.csv"
+    # File paths – update these as needed
+    test_data_file = ""       # CSV with test data for multiple patients
+    apache_file = ""          # CSV with APACHE values for multiple patients
+    best_model_path = ""
+    output_predictions_file = ""
     
-    # Load and merge the data
-    df_merged = load_and_merge_data(apache_file, preds_file)
+    # Load test dataset and APACHE dataset
+    test_data_df = pd.read_csv(test_data_file)
+    apache_df = pd.read_csv(apache_file)
+    print(f"Loaded test data with shape: {test_data_df.shape}")
+    print(f"Loaded APACHE data with shape: {apache_df.shape}")
     
-    # Evaluate overall ROC and plot ROC curve
-    overall_output_folder = "model_vs_apache"
-    y_true, y_pred_model, y_pred_apache = evaluate_overall_roc(df_merged, overall_output_folder)
-    plot_overall_roc(y_true, y_pred_model, y_pred_apache, overall_output_folder)
+    # Load the best model
+    best_model = load_model(best_model_path)
     
-    # Evaluate AUROC at specific time points using bootstrapping
-    model_auc_means, model_errors, apache_auc_means, apache_errors = evaluate_time_points(df_merged, TIME_POINTS)
+    # Get unique patient IDs from test data
+    patient_ids = test_data_df["patientid"].unique()
+    print(f"Found {len(patient_ids)} patients.")
+    
+    # List to store merged predictions for all patients
+    all_merged = []
+    
+    # Loop over each patient and process data
+    for pid in patient_ids:
+        print(f"Processing patient {pid}...")
+        df_merged = process_patient(pid, test_data_df, apache_df, best_model, embedding_dim=16, max_seq_len=72)
+        if df_merged is not None:
+            all_merged.append(df_merged)
+    
+    # Combine results for all patients
+    if all_merged:
+        combined_df = pd.concat(all_merged, ignore_index=True)
+        combined_df.to_csv(output_predictions_file, index=False)
+        print(f"Combined predictions saved to: {output_predictions_file}")
+    else:
+        print("No patient data processed.")
+        return
+    
+    # Evaluate overall ROC and plot overall ROC curve
+    overall_output_folder = ""
+    y_true, y_pred_model, y_pred_apache = evaluate_overall_roc(combined_df, overall_output_folder)
+    
+    # Evaluate AUROC at specified time points using bootstrapping and plot results
+    model_auc_means, model_errors, apache_auc_means, apache_errors = evaluate_time_points(combined_df, TIME_POINTS)
     plot_timepoint_auc(TIME_POINTS, model_auc_means, model_errors, apache_auc_means, apache_errors, overall_output_folder)
     
 if __name__ == "__main__":
