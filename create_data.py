@@ -56,47 +56,45 @@ def load_patient_data(bucket, prefix, local_dir):
             print(f"Error reading {local_file}: {e}")
     return patient_data_list
 
-def create_train_test_splits(patient_data_list, test_size=0.2, random_state=42):
+def create_train_test_pairs(patient_data_list, test_size=0.2, random_state=42):
     """
     Split the list of patient DataFrames into training and testing sets at the patient level.
+    Each patient’s data is stored as a tuple (data, label), where label is extracted from the 'mortality'
+    column if present; otherwise, label is set to None.
     Returns:
-      - X_train: List of DataFrames for training.
-      - X_test: List of DataFrames for testing.
-      - If a 'mortality' column exists, also extract labels (y_train and y_test).
+      train_pairs, test_pairs
     """
     # Extract patient IDs from the DataFrames
     patient_ids = [df['patientid'].iloc[0] for df in patient_data_list]
-    # Create a DataFrame to facilitate splitting
     df_patients = pd.DataFrame({'patientid': patient_ids})
     
     # Split patient IDs into training and testing sets
     train_ids, test_ids = train_test_split(df_patients['patientid'], test_size=test_size, random_state=random_state)
     
-    X_train = [df for df in patient_data_list if df['patientid'].iloc[0] in train_ids.values]
-    X_test = [df for df in patient_data_list if df['patientid'].iloc[0] in test_ids.values]
-    
-    # If the files contain a target column 'mortality', extract labels.
-    if patient_data_list and 'mortality' in patient_data_list[0].columns:
-        y_train = [df['mortality'].iloc[0] for df in X_train]
-        y_test = [df['mortality'].iloc[0] for df in X_test]
-        return X_train, y_train, X_test, y_test
-    else:
-        return X_train, None, X_test, None
+    train_pairs = []
+    test_pairs = []
+    for df in patient_data_list:
+        pid = df['patientid'].iloc[0]
+        label = df['mortality'].iloc[0] if 'mortality' in df.columns else None
+        pair = (df, label)
+        if pid in train_ids.values:
+            train_pairs.append(pair)
+        elif pid in test_ids.values:
+            test_pairs.append(pair)
+    return train_pairs, test_pairs
 
-def save_splits(X_train, y_train, X_test, y_test, output_dir):
+def save_pairs(train_pairs, test_pairs, output_dir):
     """
-    Save the training and testing sets as pickle files.
+    Save the training and testing pairs as pickle files.
+    The training pairs are saved in 'train.pkl' and test pairs in 'test.pkl'.
     """
-    with open(os.path.join(output_dir, "X_train.pkl"), "wb") as f:
-        pickle.dump(X_train, f)
-    with open(os.path.join(output_dir, "X_test.pkl"), "wb") as f:
-        pickle.dump(X_test, f)
-    if y_train is not None and y_test is not None:
-        with open(os.path.join(output_dir, "y_train.pkl"), "wb") as f:
-            pickle.dump(y_train, f)
-        with open(os.path.join(output_dir, "y_test.pkl"), "wb") as f:
-            pickle.dump(y_test, f)
-    print(f"Train/test splits saved to '{output_dir}'.")
+    train_path = os.path.join(output_dir, "train.pkl")
+    test_path = os.path.join(output_dir, "test.pkl")
+    with open(train_path, "wb") as f:
+        pickle.dump(train_pairs, f)
+    with open(test_path, "wb") as f:
+        pickle.dump(test_pairs, f)
+    print(f"Train/test pairs saved to '{output_dir}'.")
 
 def main():
     # 1. Load patient data from S3 imputed files
@@ -106,12 +104,12 @@ def main():
         print("No patient data found in S3.")
         return
     
-    # 2. Create train/test splits at the patient level
-    X_train, y_train, X_test, y_test = create_train_test_splits(patient_data_list, test_size=0.2)
-    print(f"Training set: {len(X_train)} patients, Testing set: {len(X_test)} patients")
+    # 2. Create train/test pairs (each as a tuple: (patient_data, label))
+    train_pairs, test_pairs = create_train_test_pairs(patient_data_list, test_size=0.2)
+    print(f"Training set: {len(train_pairs)} patients, Testing set: {len(test_pairs)} patients")
     
-    # 3. Save the splits as pickle files
-    save_splits(X_train, y_train, X_test, y_test, OUTPUT_DIR)
+    # 3. Save the pairs as pickle files
+    save_pairs(train_pairs, test_pairs, OUTPUT_DIR)
 
 if __name__ == "__main__":
     main()
