@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Calculate SHAP Values and Generate Summary Plots for TBI HRV Prediction Model
+Calculate SHAP Values and Generate Summary Plots
 
 """
 
