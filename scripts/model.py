@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
 """
 Model Training and Evaluation for TBI HRV Prediction
-
-This script performs hyperparameter grid search with cross-validation
-on the refined model using the training data (X_train_resampled and y_train_resampled).
-It uses a parameter grid for:
-  - activation: ['sigmoid']
-  - dropout: [0.2, 0.3]
-  - units: [16, 32, 64, 128]
-  - layers: [2]
-  - optimizer: ['adam']
-
-For each hyperparameter combination and fold, the model is trained and validated.
-Metrics (AUC, accuracy, Matthews correlation, etc.) are computed, calibrated,
-and bootstrapped. Hourly performance is also evaluated.
-Results are saved to CSV files, and the best model (by validation AUC) is saved.
 """
 
 import os
@@ -41,8 +27,8 @@ from sklearn.calibration import CalibrationDisplay
 # ------------------------------
 # Load previously saved training data (update paths as needed)
 # ------------------------------
-X_train_resampled = np.load('data/token/X_resampled_new.npy')
-y_train_resampled = np.load('data/token/y_resampled_new.npy')
+X_train_resampled = np.load('/X_resampled_new.npy')
+y_train_resampled = np.load('/y_resampled_new.npy')
 
 # ------------------------------
 # Define output paths and configuration
