@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""
-Evaluation Module for Ectopic Beat Detection Model
-"""
+
 
 import os
 import numpy as np
