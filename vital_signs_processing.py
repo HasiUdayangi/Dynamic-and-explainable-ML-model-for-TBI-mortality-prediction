@@ -2,26 +2,6 @@
 """
 Vital Signs Processing Module
 
-This module contains functions to:
-  - Transform vital signs data from long to wide format.
-  - Calculate hourly statistics (min, max, median) for various vital signs.
-  
-Functions:
-    prepare_vital_signs_pivot(df, admission_time)
-        - Pivots the DataFrame, renames parameter columns, calculates time since admission,
-          and inserts a patient ID column.
-        
-    calculate_hourly_vitals(df)
-        - Groups the pivoted data by patient and hour to compute min, max, and median for vital signs.
-        
-Usage:
-    This module expects a long-format CSV file (e.g., "vitals_long.csv") with columns:
-        - 'time'
-        - 'value'
-        - 'parameterid'
-    You must also provide an admission time and patient_id.
-    
-    The main block demonstrates the usage and saves the hourly statistics to a CSV file.
 """
 
 from IPython.display import HTML, clear_output
@@ -175,13 +155,13 @@ def calculate_hourly_vitals(df):
     return hourly_stats
 
 # Global variables for this demonstration (update with actual values if needed)
-admission_time = '2014-02-15 13:00:00.000'
-patient_id = 'CEC39FCE110F42D170901F6CBA7FC3BC'
+admission_time = ''
+patient_id = ''
 
 # Main execution
 if __name__ == "__main__":
     # Read long-format vital signs data; update filename if necessary
-    df = pd.read_csv("vitals_long.csv")
+    df = pd.read_csv("")
     
     # Prepare pivoted vital signs DataFrame
     n_df = prepare_vital_signs_pivot(df, admission_time)
@@ -190,7 +170,7 @@ if __name__ == "__main__":
     hourly_stats = calculate_hourly_vitals(n_df)
     
     # Save the hourly statistics to a CSV file locally (you can later push it to S3)
-    output_filename = "B001C98394B727A21644C9220D967092.csv"
+    output_filename = ""
     hourly_stats.to_csv(output_filename, index=False)
     print(f"Hourly vital statistics saved to '{output_filename}'."
 
