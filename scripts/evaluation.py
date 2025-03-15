@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 """
 Evaluation Module for Ectopic Beat Detection Model
-
-This module provides functions for:
-  - Computing custom evaluation metrics (precision, recall, Matthews correlation coefficient)
-  - Bootstrapping evaluation metrics (AUC, Accuracy, Precision, Recall, Matthews)
-  - Calculating hourly metrics (AUC and PRC AUC)
-  - A custom Keras Callback (MetricsHistory) to record evaluation metrics on the validation set per epoch
-  - Calibration functions: computing calibration curves and visualizing calibration plots
 """
 
 import os
