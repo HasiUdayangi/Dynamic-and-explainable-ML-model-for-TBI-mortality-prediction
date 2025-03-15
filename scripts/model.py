@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""
-Model Training and Evaluation for TBI HRV Prediction
-"""
+
 
 import os
 import pickle
