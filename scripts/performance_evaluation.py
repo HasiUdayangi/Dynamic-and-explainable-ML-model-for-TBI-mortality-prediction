@@ -2,14 +2,6 @@
 """
 Performance Evaluation Script
 
-This script:
-  - Reads a CSV file (e.g., "performance_metrics.csv") containing performance metrics across folds.
-  - Groups the data by hour and calculates the mean for each metric.
-  - Plots AUC, Accuracy, Precision, Recall, and MCC over time.
-  - Saves the resulting plot in a designated output folder.
-
-Usage:
-    python performance_evaluation.py
 """
 
 import os
@@ -36,7 +28,7 @@ def main():
     print(mean_metrics.head())
     
     # Define output folder for saving the plot
-    output_folder = "performance_analysis/validation_performances"
+    output_folder = ""
     os.makedirs(output_folder, exist_ok=True)
     
     # Plot all metrics in one graph
@@ -56,7 +48,7 @@ def main():
     plt.tight_layout()
     
     # Save the plot to the output folder
-    output_path = os.path.join(output_folder, 'combined_performance_metrics_.png')
+    output_path = os.path.join(output_folder, '')
     plt.savefig(output_path)
     print(f"Saved: {output_path}")
     
