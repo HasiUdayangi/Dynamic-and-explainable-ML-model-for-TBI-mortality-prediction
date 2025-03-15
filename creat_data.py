@@ -8,13 +8,13 @@ from sklearn.model_selection import train_test_split
 # --------------------------
 # Configuration – Update these values!
 # --------------------------
-BUCKET_NAME = "realtimemonitoring"
+BUCKET_NAME = ""
 # Folder where imputed CSV files are stored
-IMPUTED_PREFIX = "pre process train data/imputed data/"
+IMPUTED_PREFIX = ""
 # Local temporary directory (optional)
-LOCAL_TEMP_DIR = "temp_imputed_files"
+LOCAL_TEMP_DIR = ""
 # Output directory for the pickle files
-OUTPUT_DIR = "data/processed"
+OUTPUT_DIR = ""
 
 # Create local temp and output directories if they do not exist
 os.makedirs(LOCAL_TEMP_DIR, exist_ok=True)
