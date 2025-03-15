@@ -1,10 +1,10 @@
-BUCKET_NAME = "realtimemonitoring"
+BUCKET_NAME = ""
 # Input CSV files are assumed to be stored under this prefix in S3
-INPUT_PREFIX = "Train vital data files/"
+INPUT_PREFIX = ""
 # Processed files (data length fixed) will be stored here
-FIXED_PREFIX = "pre process train data/data length fixed/"
+FIXED_PREFIX = "/"
 # Imputed files will be stored here
-IMPUTED_PREFIX = "pre process train data/imputed data/"
+IMPUTED_PREFIX = ""
 
 # Create an S3 client (ensure your AWS credentials are set up)
 s3_client = boto3.client('s3')
