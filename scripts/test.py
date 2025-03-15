@@ -1,17 +1,4 @@
-#!/usr/bin/env python3
-"""
-Model Testing Script
 
-This script performs the following:
-  - Loads test data (X_test and y_test) from saved .npy files.
-  - Loads the trained model.
-  - For each hour slice of the test data, computes performance metrics (AUC, accuracy, precision, recall, Matthews correlation).
-  - Saves the hourly test metrics to a CSV file.
-  - Applies a calibration curve on full test predictions and saves the calibration results and plot.
-
-Usage:
-    python model_testing.py
-"""
 
 import os
 import numpy as np
@@ -23,18 +10,18 @@ from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
 
 # Define output directory and ensure it exists
-output_dir = "real time output hourly token_final"
+output_dir = ""
 os.makedirs(output_dir, exist_ok=True)
 
 # Define file paths for saving results
-results_filepath = os.path.join(output_dir, 'hourly_test_metrics.csv')
-calibration_test_path = os.path.join(output_dir, 'calibration_test.csv')
-calibration_plot_path = os.path.join(output_dir, 'calibration_test_plot.png')
+results_filepath = os.path.join(output_dir, '')
+calibration_test_path = os.path.join(output_dir, '')
+calibration_plot_path = os.path.join(output_dir, '')
 
 # Load test data and trained model (update paths if needed)
-X_test = np.load('data/token/X_test.npy')
-y_test = np.load('data/token/y_test.npy')
-model = load_model('best_model_BiLSTM_cumulative_2.keras')
+X_test = np.load('/X_test.npy')
+y_test = np.load('/y_test.npy')
+model = load_model('')
 
 # Evaluate the model for each hour slice
 hourly_test_metrics = []
